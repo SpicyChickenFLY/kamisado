@@ -110,10 +110,10 @@ type Playground struct {
 	board    [boardHeight][boardWidth]square
 	pieceBox [playerNum][pieceColorNum]piece
 	data     struct {
-		GameMode int      `json:"game_mode"`
-		Records  []Record `json:"log"`
-		Turn     int      `json:"turn"`
-		CurrentColor int `json:"current_color"`
+		GameMode     int       `json:"game_mode"`
+		Records      []*Record `json:"log"`
+		Turn         int       `json:"turn"`
+		CurrentColor int       `json:"current_color"`
 	}
 }
 
@@ -165,6 +165,20 @@ func (pg *Playground) GetGameData() (data string, err error) {
 	return string(jsonBytes), nil
 }
 
+// checkMoveValid check
+func (pg *Playground) checkMoveValid(record *Record) bool {
+	// check player's piece exists in src square
+	srcPiece := pg.board[record.SrcCoor.XPos][record.SrcCoor.YPos].piece
+	if srcPiece == nil || srcPiece.ownerColor != record.PlayerTurn {
+		return false
+	}
+	// check no pieces exists in dst square
+	if pg.board[record.DstCoor.XPos][record.DstCoor.YPos].piece != nil {
+		return false
+	}
+	return true
+}
+
 func (pg *Playground) parseMoveCmdContent(cmd *Command) (*Record, error) {
 	coorParts := strings.Split(cmd.Content, coorsSep)
 	if len(coorParts) != 2 {
@@ -202,6 +216,7 @@ func (pg *Playground) parseMoveCmdContent(cmd *Command) (*Record, error) {
 }
 
 func (pg *Playground) executeMoveCmd(player int, cmd *Command) error {
+	// check if game is still running
 	if player != pg.data.Turn {
 		return errors.New("Not your turn")
 	}
@@ -209,7 +224,15 @@ func (pg *Playground) executeMoveCmd(player int, cmd *Command) error {
 	if err != nil {
 		return err
 	}
-	if 
+	if !pg.checkMoveValid(record) {
+		return errors.New("Invalid move")
+	}
+	// move piece and write log
+	pg.board[record.SrcCoor.XPos][record.SrcCoor.YPos].piece =
+		pg.board[record.DstCoor.XPos][record.DstCoor.YPos].piece
+	pg.board[record.DstCoor.XPos][record.DstCoor.YPos].piece = nil
+	pg.data.Records = append(pg.data.Records, record)
+	return nil
 }
 
 // ExecuteCmd execute command
