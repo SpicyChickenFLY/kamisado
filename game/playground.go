@@ -101,6 +101,20 @@ func (pg *Playground) parseMoveCmdContent(cmd *Command) (*Record, error) {
 	return newRecord, nil
 }
 
+// checkMoveValid check
+func (pg *Playground) checkMoveValid(record *Record) bool {
+	// check player's piece exists in src square
+	srcPiece := pg.token.board[record.SrcCoor.XPos][record.SrcCoor.YPos].piece
+	if srcPiece == nil || srcPiece.ownerColor != record.PlayerTurn {
+		return false
+	}
+	// check no pieces exists in dst square
+	if pg.token.board[record.DstCoor.XPos][record.DstCoor.YPos].piece != nil {
+		return false
+	}
+	return true
+}
+
 func (pg *Playground) executeMoveCmd(player int, cmd *Command) error {
 	if player != pg.data.Turn {
 		return errors.New("Not your turn")
@@ -109,10 +123,14 @@ func (pg *Playground) executeMoveCmd(player int, cmd *Command) error {
 	if err != nil {
 		return err
 	}
-	//
-	if true {
-		pg.data.Records = append(pg.data.Records, *record)
+	if !pg.checkMoveValid(record) {
+		return errors.New("Invalid move")
 	}
+	// move piece and write log
+	pg.token.board[record.SrcCoor.XPos][record.SrcCoor.YPos].piece =
+		pg.token.board[record.DstCoor.XPos][record.DstCoor.YPos].piece
+	pg.token.board[record.DstCoor.XPos][record.DstCoor.YPos].piece = nil
+	pg.data.Records = append(pg.data.Records, record)
 	return nil
 }
 

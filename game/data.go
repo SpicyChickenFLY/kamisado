@@ -20,8 +20,8 @@ type Record struct {
 }
 
 type data struct {
-	GameMode     int      `json:"game_mode"`
-	Records      []Record `json:"log"`
-	Turn         int      `json:"turn"`
-	CurrentColor int      `json:"current_color"`
+	GameMode     int       `json:"game_mode"`
+	Records      []*Record `json:"log"`
+	Turn         int       `json:"turn"`
+	CurrentColor int       `json:"current_color"`
 }
