@@ -1,4 +1,4 @@
-package game
+package kamisado
 
 import "errors"
 
@@ -8,6 +8,7 @@ const (
 	pieceColorNum = 8
 )
 
+// pieceColor
 const (
 	nonPieceColor = -1 + iota
 	pieceColorPurple
@@ -29,12 +30,6 @@ var defaultBoardColor = [boardHeight][boardWidth]int{
 	{pieceColorBrown, pieceColorYellow, pieceColorOrange, pieceColorBlue, pieceColorRed, pieceColorPurple, pieceColorGreen, pieceColorPink},
 	{pieceColorBlue, pieceColorOrange, pieceColorYellow, pieceColorBrown, pieceColorPink, pieceColorGreen, pieceColorPurple, pieceColorRed},
 	{pieceColorOrange, pieceColorPink, pieceColorRed, pieceColorYellow, pieceColorGreen, pieceColorBlue, pieceColorBrown, pieceColorPurple},
-}
-
-// Coodinator is the data format of coodinator
-type Coodinator struct {
-	X int `json:"x"`
-	Y int `json:"y"`
 }
 
 type piece struct {
@@ -70,28 +65,40 @@ func (b *board) init() {
 		squareForPlayerWhite := b[playerWhiteInitRow][j]
 		squareForPlayerWhite.piece = &piece{
 			color:      squareForPlayerWhite.color,
-			ownerColor: playerColorWhite,
+			ownerColor: playerWhite,
 		}
 		squareForPlayerBlack := b[playerBlackInitRow][j]
 		squareForPlayerBlack.piece = &piece{
 			color:      squareForPlayerBlack.color,
-			ownerColor: playerColorBlack,
+			ownerColor: playerBlack,
 		}
 	}
 }
 
-func (b *board) movePiece(playerColor int, from, to Coodinator) error {
+func (b *board) movePiece(playerColor, gameColor int, from, to Coodinator) (int, error) {
 	// check source square
 	if b[from.X][from.Y].piece == nil {
-		return errors.New("No piece found in position(%d, %d)")
+		return nonPieceColor, errors.New("No piece found in position(%d, %d)")
 	}
 	// check target square
 	if b[to.X][to.Y].piece == nil {
-		return errors.New("A piece occupied in position(%d, %d)")
+		return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 	}
+	// check piece choice
+	if b[from.X][from.Y].piece.ownerColor != playerColor {
+		return nonPieceColor, errors.New("The piece(%d, %d) doesn't belongs to player(%d)")
+	}
+	if b[from.X][from.Y].color != nonPieceColor && b[from.X][from.Y].color != gameColor {
+		return nonPieceColor, errors.New("This square(%d, %d) doesn't match color(%d)")
+	}
+	// TODO: check move rule
+	if false {
+		return nonPieceColor, errors.New("piece can only move sideways, vertically, and obliquely,; and cannnot move backward")
+	}
+
 	// move the piece
 	b[to.X][to.Y].piece = b[from.X][from.Y].piece
 	b[from.X][from.Y].piece = nil
 
-	return nil
+	return b[to.X][to.Y].color, nil
 }
