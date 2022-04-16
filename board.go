@@ -1,6 +1,9 @@
 package kamisado
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+)
 
 const (
 	boardWidth    = 8
@@ -42,7 +45,35 @@ type square struct {
 	color int
 }
 
+type boardData struct {
+	PiecesInfo [][]int `json:"pieces_info"`
+	SquareInfo [][]int `json:"square_info"`
+}
+
 type board [boardHeight][boardWidth]square
+
+func (b *board) marshalBoardJSON() ([]byte, error) {
+	bd := boardData{
+		PiecesInfo: make([][]int, 0),
+		SquareInfo: make([][]int, boardHeight),
+	}
+	for h := 0; h < boardHeight; h++ {
+		bd.SquareInfo[h] = make([]int, boardWidth)
+		for w := 0; w < boardWidth; w++ {
+			square := b[h][w]
+			bd.SquareInfo[h][w] = square.color
+			if square.piece != nil {
+				bd.PiecesInfo = append(bd.PiecesInfo,
+					[]int{square.piece.ownerColor, square.piece.color, h, w})
+			}
+		}
+	}
+	jsonStr, err := json.Marshal(bd)
+	if err != nil {
+		return nil, err
+	}
+	return jsonStr, nil
+}
 
 func newBoard() *board {
 	b := board{}
@@ -62,14 +93,12 @@ func (b *board) init() {
 	}
 	// place pieces
 	for j := 0; j < boardWidth; j++ {
-		squareForPlayerWhite := b[playerWhiteInitRow][j]
-		squareForPlayerWhite.piece = &piece{
-			color:      squareForPlayerWhite.color,
+		b[playerWhiteInitRow][j].piece = &piece{
+			color:      b[playerWhiteInitRow][j].color,
 			ownerColor: playerWhite,
 		}
-		squareForPlayerBlack := b[playerBlackInitRow][j]
-		squareForPlayerBlack.piece = &piece{
-			color:      squareForPlayerBlack.color,
+		b[playerBlackInitRow][j].piece = &piece{
+			color:      b[playerBlackInitRow][j].color,
 			ownerColor: playerBlack,
 		}
 	}

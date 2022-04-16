@@ -4,8 +4,6 @@ import "encoding/json"
 
 // Data of this game can be exported as json
 type Data struct {
-	GameMode int       `json:"game_mode"`
-	Records  []*Record `json:"records"`
 }
 
 // Record is the data format of game log

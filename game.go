@@ -12,7 +12,8 @@ const (
 // Game is compelete Game information
 type Game struct {
 	board      board
-	data       Data
+	Mode       int
+	Records    []*Record
 	nextPlayer int
 	nextColor  int
 }
@@ -26,8 +27,8 @@ func NewGame(gameMode int) *Game {
 
 // init board and data in game
 func (g *Game) init(gameMode int) {
-	g.data.GameMode = gameMode
-	g.data.Records = make([]*Record, 0)
+	g.Mode = gameMode
+	g.Records = make([]*Record, 0)
 	g.board.init()
 	g.nextPlayer = firstPlayer
 	g.nextColor = nonPieceColor
@@ -35,7 +36,17 @@ func (g *Game) init(gameMode int) {
 
 // GetGameData encode Playground information to json struct
 func (g *Game) GetGameData() (data string, err error) {
-	jsonBytes, err := json.Marshal(g.data)
+	jsonBytes, err := json.Marshal(g)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// GetBoard data as json
+// TODO:
+func (g *Game) getBoard() (boardData string, err error) {
+	jsonBytes, err := g.board.marshalBoardJSON()
 	if err != nil {
 		return "", err
 	}
@@ -59,13 +70,13 @@ func (g *Game) ExecuteCmd(player int, cmd *Command) error {
 			return err
 		}
 		newRecord := &Record{
-			Turn:   len(g.data.Records) + 1,
+			Turn:   len(g.Records) + 1,
 			Player: player,
 			Move:   *move,
 		}
 		g.nextColor = nextColor
 		g.nextPlayer = getNextPlayer(player)
-		g.data.Records = append(g.data.Records, newRecord)
+		g.Records = append(g.Records, newRecord)
 	}
 	return nil
 }

@@ -16,6 +16,13 @@ func TestBoard_init(t *testing.T) {
 	}
 }
 
+func TestBoard_marshalBoardJSON(t *testing.T) {
+	testBoard.init()
+	jsonBytes, err := testBoard.marshalBoardJSON()
+	assert.Nil(t, err, "")
+	assert.NotEqual(t, 0, len(jsonBytes))
+}
+
 // normal moves:
 // abnormal moves:
 //     no piece
