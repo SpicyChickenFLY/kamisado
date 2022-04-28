@@ -30,6 +30,10 @@ func (g *Game) init(gameMode int) {
 	g.Mode = gameMode
 	g.Records = make([]*Record, 0)
 	g.board.init()
+}
+
+func (g *Game) start() {
+	g.board.start()
 	g.nextPlayer = firstPlayer
 	g.nextColor = nonPieceColor
 }
@@ -44,7 +48,6 @@ func (g *Game) GetGameData() (data string, err error) {
 }
 
 // GetBoard data as json
-// TODO:
 func (g *Game) getBoard() (boardData string, err error) {
 	jsonBytes, err := g.board.marshalBoardJSON()
 	if err != nil {

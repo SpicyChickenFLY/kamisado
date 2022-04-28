@@ -12,8 +12,8 @@ const (
 )
 
 const (
-	playerWhiteInitRow = 7
-	playerBlackInitRow = 0
+	playerWhiteInitRow = 0
+	playerBlackInitRow = 7
 )
 
 func getNextPlayer(currentPlayer int) int {

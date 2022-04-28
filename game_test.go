@@ -10,6 +10,7 @@ import (
 var testGame = NewGame(gameModeStandard)
 
 func TestGame_init(t *testing.T) {
+	testGame.init(gameModeStandard)
 }
 
 func TestGame_GetGameData(t *testing.T) {

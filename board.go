@@ -91,6 +91,9 @@ func (b *board) init() {
 			}
 		}
 	}
+}
+
+func (b *board) start() {
 	// place pieces
 	for j := 0; j < boardWidth; j++ {
 		b[playerWhiteInitRow][j].piece = &piece{
@@ -105,24 +108,71 @@ func (b *board) init() {
 }
 
 func (b *board) movePiece(playerColor, gameColor int, from, to Coodinator) (int, error) {
+	// check out of bound
+	if from.X >= boardHeight || from.X < 0 || from.Y >= boardWidth || from.Y < 0 {
+		return nonPieceColor, errors.New("position(%d, %d) out of boud")
+	}
+	if to.X >= boardHeight || to.X < 0 || to.Y >= boardWidth || to.Y < 0 {
+		return nonPieceColor, errors.New("position(%d, %d) out of boud")
+	}
 	// check source square
 	if b[from.X][from.Y].piece == nil {
 		return nonPieceColor, errors.New("No piece found in position(%d, %d)")
-	}
-	// check target square
-	if b[to.X][to.Y].piece == nil {
-		return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 	}
 	// check piece choice
 	if b[from.X][from.Y].piece.ownerColor != playerColor {
 		return nonPieceColor, errors.New("The piece(%d, %d) doesn't belongs to player(%d)")
 	}
-	if b[from.X][from.Y].color != nonPieceColor && b[from.X][from.Y].color != gameColor {
+	if gameColor != nonPieceColor && b[from.X][from.Y].color != gameColor {
 		return nonPieceColor, errors.New("This square(%d, %d) doesn't match color(%d)")
 	}
-	// TODO: check move rule
-	if false {
-		return nonPieceColor, errors.New("piece can only move sideways, vertically, and obliquely,; and cannnot move backward")
+	// check move rule
+	if from.X == to.X && from.Y == to.Y {
+		return nonPieceColor, errors.New("source and target position are the same")
+	} else if to.Y > from.Y && playerColor == playerBlack || to.Y < from.Y && playerColor == playerWhite {
+		return nonPieceColor, errors.New("piece cannot move backward")
+	} else if from.X == to.X {
+		for x := from.X; x <= to.X; x++ {
+			if b[x][to.Y].piece != nil {
+				return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
+			}
+		}
+	} else if from.Y == to.Y {
+		for y := from.Y; y <= to.Y; y++ {
+			if b[to.X][y].piece != nil {
+				return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
+			}
+		}
+	} else if from.X-to.X == from.Y-to.Y {
+		if from.X < to.X {
+			for offset := 1; offset <= to.X-from.X; offset++ {
+				if b[from.X+offset][from.Y+offset].piece != nil {
+					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
+				}
+			}
+		} else {
+			for offset := 1; offset <= from.X-to.X; offset++ {
+				if b[from.X-offset][from.Y-offset].piece != nil {
+					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
+				}
+			}
+		}
+	} else if from.X-to.X == to.Y-from.Y {
+		if from.X < to.X {
+			for offset := 1; offset <= to.X-from.X; offset++ {
+				if b[from.X+offset][from.Y-offset].piece != nil {
+					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
+				}
+			}
+		} else {
+			for offset := 1; offset <= from.X-to.X; offset++ {
+				if b[from.X-offset][from.Y+offset].piece != nil {
+					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
+				}
+			}
+		}
+	} else {
+		return nonPieceColor, errors.New("piece can only move sideways, vertically, and obliquely; and cannnot move backward")
 	}
 
 	// move the piece

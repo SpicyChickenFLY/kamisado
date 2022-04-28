@@ -26,23 +26,25 @@ func TestBoard_marshalBoardJSON(t *testing.T) {
 // normal moves:
 // abnormal moves:
 //     no piece
-//     square occupied
 //     piece not belongs to player
 //     color not match
-//     wrong move rule(not \-|/ OR move backward OR cross blocked)
+//     backward
+//     cross blocked
+//     wrong move rule(not \-|/)
 func TestBoard_movePiece(t *testing.T) {
 	var nextColor int
 	var err error
 	// Should Pass:
 	testBoard.init()
+	testBoard.start()
 	nextColor, err = testBoard.movePiece(playerWhite, nonPieceColor, Coodinator{0, 0}, Coodinator{1, 1})
 	assert.Nil(t, err, "")
-	nextColor, err = testBoard.movePiece(playerBlack, nextColor, Coodinator{0, 0}, Coodinator{1, 1})
+	nextColor, err = testBoard.movePiece(playerBlack, nextColor, Coodinator{7, 7}, Coodinator{6, 7})
 	assert.Nil(t, err, "")
-	nextColor, err = testBoard.movePiece(playerWhite, nextColor, Coodinator{0, 0}, Coodinator{1, 1})
+	nextColor, err = testBoard.movePiece(playerWhite, nextColor, Coodinator{0, 5}, Coodinator{2, 5})
 	assert.Nil(t, err, "")
 	// You Shall Not Pass!
 	testBoard.init()
-	nextColor, err = testBoard.movePiece(playerWhite, nonPieceColor, Coodinator{0, 0}, Coodinator{1, 1})
+	nextColor, err = testBoard.movePiece(playerWhite, nonPieceColor, Coodinator{4, 4}, Coodinator{1, 1})
 	assert.NotNil(t, err, "")
 }
