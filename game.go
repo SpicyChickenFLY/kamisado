@@ -11,11 +11,11 @@ const (
 
 // Game is compelete Game information
 type Game struct {
-	board      board
-	Mode       int
-	Records    []*Record
-	nextPlayer int
-	nextColor  int
+	Board      board     `json:"board"`
+	Mode       int       `json:"mode"`
+	Records    []*Record `json:"records"`
+	NextPlayer int       `json:"next_player"`
+	NextColor  int       `json:"next_color"`
 }
 
 // NewGame return *Game
@@ -29,13 +29,13 @@ func NewGame(gameMode int) *Game {
 func (g *Game) init(gameMode int) {
 	g.Mode = gameMode
 	g.Records = make([]*Record, 0)
-	g.board.init()
+	g.Board.init()
 }
 
 func (g *Game) start() {
-	g.board.start()
-	g.nextPlayer = firstPlayer
-	g.nextColor = nonPieceColor
+	g.Board.start()
+	g.NextPlayer = firstPlayer
+	g.NextColor = nonPieceColor
 }
 
 // GetGameData encode Playground information to json struct
@@ -49,7 +49,7 @@ func (g *Game) GetGameData() (data string, err error) {
 
 // GetBoard data as json
 func (g *Game) getBoard() (boardData string, err error) {
-	jsonBytes, err := g.board.marshalBoardJSON()
+	jsonBytes, err := g.Board.marshalBoardJSON()
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +58,7 @@ func (g *Game) getBoard() (boardData string, err error) {
 
 // ExecuteCmd by player
 func (g *Game) ExecuteCmd(player int, cmd *Command) error {
-	if player != g.nextPlayer {
+	if player != g.NextPlayer {
 		return errors.New("Not your turn")
 	}
 	switch cmd.Type {
@@ -68,7 +68,7 @@ func (g *Game) ExecuteCmd(player int, cmd *Command) error {
 			return err
 		}
 		// move piece and write log
-		nextColor, err := g.board.movePiece(player, g.nextColor, move.From, move.To)
+		nextColor, err := g.Board.movePiece(player, g.NextColor, move.From, move.To)
 		if err != nil {
 			return err
 		}
@@ -77,8 +77,8 @@ func (g *Game) ExecuteCmd(player int, cmd *Command) error {
 			Player: player,
 			Move:   *move,
 		}
-		g.nextColor = nextColor
-		g.nextPlayer = getNextPlayer(player)
+		g.NextColor = nextColor
+		g.NextPlayer = getNextPlayer(player)
 		g.Records = append(g.Records, newRecord)
 	}
 	return nil
