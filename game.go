@@ -47,15 +47,6 @@ func (g *Game) GetGameData() (data string, err error) {
 	return string(jsonBytes), nil
 }
 
-// GetBoard data as json
-func (g *Game) getBoard() (boardData string, err error) {
-	jsonBytes, err := g.Board.marshalBoardJSON()
-	if err != nil {
-		return "", err
-	}
-	return string(jsonBytes), nil
-}
-
 // ExecuteCmd by player
 func (g *Game) ExecuteCmd(player int, cmd *Command) error {
 	if player != g.NextPlayer {

@@ -1,7 +1,6 @@
 package kamisado
 
 import (
-	"encoding/json"
 	"errors"
 )
 
@@ -35,45 +34,19 @@ var defaultBoardColor = [boardHeight][boardWidth]int{
 	{pieceColorOrange, pieceColorPink, pieceColorRed, pieceColorYellow, pieceColorGreen, pieceColorBlue, pieceColorBrown, pieceColorPurple},
 }
 
-type piece struct {
-	color      int
-	ownerColor int
+// Piece contain color & owner color
+type Piece struct {
+	Color      int `json:"color"`
+	OwnerColor int `json:"owner_color"`
 }
 
-type square struct {
-	piece *piece
-	color int
+// Square of board
+type Square struct {
+	Piece *Piece `json:"piece"`
+	Color int    `json:"color"`
 }
 
-type boardData struct {
-	PiecesInfo [][]int `json:"pieces_info"`
-	SquareInfo [][]int `json:"square_info"`
-}
-
-type board [boardHeight][boardWidth]square
-
-func (b *board) marshalBoardJSON() ([]byte, error) {
-	bd := boardData{
-		PiecesInfo: make([][]int, 0),
-		SquareInfo: make([][]int, boardHeight),
-	}
-	for h := 0; h < boardHeight; h++ {
-		bd.SquareInfo[h] = make([]int, boardWidth)
-		for w := 0; w < boardWidth; w++ {
-			square := b[h][w]
-			bd.SquareInfo[h][w] = square.color
-			if square.piece != nil {
-				bd.PiecesInfo = append(bd.PiecesInfo,
-					[]int{square.piece.ownerColor, square.piece.color, h, w})
-			}
-		}
-	}
-	jsonStr, err := json.Marshal(bd)
-	if err != nil {
-		return nil, err
-	}
-	return jsonStr, nil
-}
+type board [boardHeight][boardWidth]Square
 
 func newBoard() *board {
 	b := board{}
@@ -85,9 +58,9 @@ func (b *board) init() {
 	// init board
 	for x := 0; x < boardHeight; x++ {
 		for y := 0; y < boardWidth; y++ {
-			b[x][y] = square{
-				color: defaultBoardColor[x][y],
-				piece: nil,
+			b[x][y] = Square{
+				Color: defaultBoardColor[x][y],
+				Piece: nil,
 			}
 		}
 	}
@@ -96,13 +69,13 @@ func (b *board) init() {
 func (b *board) start() {
 	// place pieces
 	for j := 0; j < boardWidth; j++ {
-		b[playerWhiteInitRow][j].piece = &piece{
-			color:      b[playerWhiteInitRow][j].color,
-			ownerColor: playerWhite,
+		b[playerWhiteInitRow][j].Piece = &Piece{
+			Color:      b[playerWhiteInitRow][j].Color,
+			OwnerColor: playerWhite,
 		}
-		b[playerBlackInitRow][j].piece = &piece{
-			color:      b[playerBlackInitRow][j].color,
-			ownerColor: playerBlack,
+		b[playerBlackInitRow][j].Piece = &Piece{
+			Color:      b[playerBlackInitRow][j].Color,
+			OwnerColor: playerBlack,
 		}
 	}
 }
@@ -116,14 +89,14 @@ func (b *board) movePiece(playerColor, gameColor int, from, to Coodinator) (int,
 		return nonPieceColor, errors.New("position(%d, %d) out of boud")
 	}
 	// check source square
-	if b[from.X][from.Y].piece == nil {
+	if b[from.X][from.Y].Piece == nil {
 		return nonPieceColor, errors.New("No piece found in position(%d, %d)")
 	}
 	// check piece choice
-	if b[from.X][from.Y].piece.ownerColor != playerColor {
+	if b[from.X][from.Y].Piece.OwnerColor != playerColor {
 		return nonPieceColor, errors.New("The piece(%d, %d) doesn't belongs to player(%d)")
 	}
-	if gameColor != nonPieceColor && b[from.X][from.Y].color != gameColor {
+	if gameColor != nonPieceColor && b[from.X][from.Y].Color != gameColor {
 		return nonPieceColor, errors.New("This square(%d, %d) doesn't match color(%d)")
 	}
 	// check move rule
@@ -133,26 +106,26 @@ func (b *board) movePiece(playerColor, gameColor int, from, to Coodinator) (int,
 		return nonPieceColor, errors.New("piece cannot move backward")
 	} else if from.X == to.X {
 		for x := from.X; x <= to.X; x++ {
-			if b[x][to.Y].piece != nil {
+			if b[x][to.Y].Piece != nil {
 				return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 			}
 		}
 	} else if from.Y == to.Y {
 		for y := from.Y; y <= to.Y; y++ {
-			if b[to.X][y].piece != nil {
+			if b[to.X][y].Piece != nil {
 				return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 			}
 		}
 	} else if from.X-to.X == from.Y-to.Y {
 		if from.X < to.X {
 			for offset := 1; offset <= to.X-from.X; offset++ {
-				if b[from.X+offset][from.Y+offset].piece != nil {
+				if b[from.X+offset][from.Y+offset].Piece != nil {
 					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 				}
 			}
 		} else {
 			for offset := 1; offset <= from.X-to.X; offset++ {
-				if b[from.X-offset][from.Y-offset].piece != nil {
+				if b[from.X-offset][from.Y-offset].Piece != nil {
 					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 				}
 			}
@@ -160,13 +133,13 @@ func (b *board) movePiece(playerColor, gameColor int, from, to Coodinator) (int,
 	} else if from.X-to.X == to.Y-from.Y {
 		if from.X < to.X {
 			for offset := 1; offset <= to.X-from.X; offset++ {
-				if b[from.X+offset][from.Y-offset].piece != nil {
+				if b[from.X+offset][from.Y-offset].Piece != nil {
 					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 				}
 			}
 		} else {
 			for offset := 1; offset <= from.X-to.X; offset++ {
-				if b[from.X-offset][from.Y+offset].piece != nil {
+				if b[from.X-offset][from.Y+offset].Piece != nil {
 					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
 				}
 			}
@@ -176,8 +149,8 @@ func (b *board) movePiece(playerColor, gameColor int, from, to Coodinator) (int,
 	}
 
 	// move the piece
-	b[to.X][to.Y].piece = b[from.X][from.Y].piece
-	b[from.X][from.Y].piece = nil
+	b[to.X][to.Y].Piece = b[from.X][from.Y].Piece
+	b[from.X][from.Y].Piece = nil
 
-	return b[to.X][to.Y].color, nil
+	return b[to.X][to.Y].Color, nil
 }
