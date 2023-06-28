@@ -32,7 +32,7 @@ func (g *Game) init(gameMode int) {
 	g.Board.init()
 }
 
-func (g *Game) start() {
+func (g *Game) Start() {
 	g.Board.start()
 	g.NextPlayer = firstPlayer
 	g.NextColor = nonPieceColor

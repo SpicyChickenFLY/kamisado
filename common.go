@@ -1,6 +1,8 @@
 package kamisado
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // Data of this game can be exported as json
 type Data struct {
@@ -15,12 +17,12 @@ type Record struct {
 
 // Move tell piece from where and to where
 type Move struct {
-	From Coodinator `json:"from"`
-	To   Coodinator `json:"to"`
+	From Coord `json:"from"`
+	To   Coord `json:"to"`
 }
 
-// Coodinator is the data format of coodinator
-type Coodinator struct {
+// Coord is the data format of coodinator
+type Coord struct {
 	X int `json:"x"`
 	Y int `json:"y"`
 }
@@ -36,7 +38,7 @@ type Command struct {
 }
 
 func (c *Command) parseContentToMove() (move *Move, err error) {
-	err = json.Unmarshal([]byte(c.Content), move)
+	err = json.Unmarshal([]byte(c.Content), &move)
 	if err != nil {
 		return nil, err
 	}

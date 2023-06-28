@@ -1,7 +1,8 @@
 package kamisado
 
 import (
-	"errors"
+	"fmt"
+	"math"
 )
 
 const (
@@ -13,26 +14,15 @@ const (
 // pieceColor
 const (
 	nonPieceColor = -1 + iota
-	pieceColorPurple
+	pieceColorMagenta
 	pieceColorBrown
-	pieceColorBlue
+	pieceColorCyan
 	pieceColorGreen
 	pieceColorYellow
 	pieceColorRed
 	pieceColorPink
 	pieceColorOrange
 )
-
-var defaultBoardColor = [boardHeight][boardWidth]int{
-	{pieceColorPurple, pieceColorBrown, pieceColorBlue, pieceColorGreen, pieceColorYellow, pieceColorRed, pieceColorPink, pieceColorOrange},
-	{pieceColorRed, pieceColorPurple, pieceColorGreen, pieceColorPink, pieceColorBrown, pieceColorYellow, pieceColorOrange, pieceColorBlue},
-	{pieceColorPink, pieceColorGreen, pieceColorPurple, pieceColorRed, pieceColorBlue, pieceColorOrange, pieceColorYellow, pieceColorBrown},
-	{pieceColorGreen, pieceColorBlue, pieceColorBrown, pieceColorPurple, pieceColorOrange, pieceColorPink, pieceColorRed, pieceColorYellow},
-	{pieceColorYellow, pieceColorRed, pieceColorPink, pieceColorOrange, pieceColorPurple, pieceColorBrown, pieceColorBlue, pieceColorGreen},
-	{pieceColorBrown, pieceColorYellow, pieceColorOrange, pieceColorBlue, pieceColorRed, pieceColorPurple, pieceColorGreen, pieceColorPink},
-	{pieceColorBlue, pieceColorOrange, pieceColorYellow, pieceColorBrown, pieceColorPink, pieceColorGreen, pieceColorPurple, pieceColorRed},
-	{pieceColorOrange, pieceColorPink, pieceColorRed, pieceColorYellow, pieceColorGreen, pieceColorBlue, pieceColorBrown, pieceColorPurple},
-}
 
 // Piece contain color & owner color
 type Piece struct {
@@ -55,13 +45,10 @@ func newBoard() *board {
 }
 
 func (b *board) init() {
-	// init board
-	for x := 0; x < boardHeight; x++ {
-		for y := 0; y < boardWidth; y++ {
-			b[x][y] = Square{
-				Color: defaultBoardColor[x][y],
-				Piece: nil,
-			}
+	for c := 0; c < boardWidth; c++ {
+		for x := 0; x < boardHeight; x++ {
+			y := ((2*c+1)*x + c) % boardWidth
+			b[x][y] = Square{Color: c, Piece: nil}
 		}
 	}
 }
@@ -80,72 +67,70 @@ func (b *board) start() {
 	}
 }
 
-func (b *board) movePiece(playerColor, gameColor int, from, to Coodinator) (int, error) {
-	// check out of bound
+func (b *board) checkMoveValid(playerColor, gameColor int, from, to Coord) error {
+	// check coordinateout of bound
 	if from.X >= boardHeight || from.X < 0 || from.Y >= boardWidth || from.Y < 0 {
-		return nonPieceColor, errors.New("position(%d, %d) out of boud")
+		return fmt.Errorf("source pos(%+v) is out of boud", from)
 	}
 	if to.X >= boardHeight || to.X < 0 || to.Y >= boardWidth || to.Y < 0 {
-		return nonPieceColor, errors.New("position(%d, %d) out of boud")
+		return fmt.Errorf("target pos(%+v) is out of boud", to)
 	}
-	// check source square
-	if b[from.X][from.Y].Piece == nil {
-		return nonPieceColor, errors.New("No piece found in position(%d, %d)")
-	}
+
 	// check piece choice
+	if b[from.X][from.Y].Piece == nil {
+		return fmt.Errorf("no piece has been found in pos(%+v)", from)
+	}
 	if b[from.X][from.Y].Piece.OwnerColor != playerColor {
-		return nonPieceColor, errors.New("The piece(%d, %d) doesn't belongs to player(%d)")
+		return fmt.Errorf(
+			"piece in pos(%+v) is not belongs to player(%d)", from, playerColor)
 	}
-	if gameColor != nonPieceColor && b[from.X][from.Y].Color != gameColor {
-		return nonPieceColor, errors.New("This square(%d, %d) doesn't match color(%d)")
+	if gameColor != nonPieceColor && b[from.X][from.Y].Piece.Color != gameColor {
+		return fmt.Errorf(
+			"piece in pos(%+v) doesn't match turn color(%d)", from, gameColor)
 	}
+
 	// check move rule
+	return b.checkMoveRuleValid(playerColor, from, to)
+}
+
+func (b *board) checkMoveRuleValid(playerColor int, from, to Coord) error {
 	if from.X == to.X && from.Y == to.Y {
-		return nonPieceColor, errors.New("source and target position are the same")
-	} else if to.Y > from.Y && playerColor == playerBlack || to.Y < from.Y && playerColor == playerWhite {
-		return nonPieceColor, errors.New("piece cannot move backward")
-	} else if from.X == to.X {
-		for x := from.X; x <= to.X; x++ {
-			if b[x][to.Y].Piece != nil {
-				return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
-			}
-		}
+		return fmt.Errorf("source/target pos can not be the same pos(%+v)", from)
+	}
+	if to.Y > from.Y && playerColor == playerBlack || to.Y < from.Y && playerColor == playerWhite {
+		return fmt.Errorf("piece can not move backward from pos(%+v) to pos(%+v)", from, to)
+	}
+	if (from.X == to.X) || (from.Y == to.Y) || (from.X-to.X == from.Y-to.Y) || (from.X-to.X == to.Y-from.Y) {
+		return b.checkMovePathOccupied(from, to)
+	}
+
+	return fmt.Errorf("piece can only move sideways, vertically, and obliquely")
+}
+
+func (b *board) checkMovePathOccupied(from, to Coord) error {
+	verticalDirection, horizontalDirection := 0, 0
+	length := int(math.Max(math.Abs(float64(to.Y-from.Y)), math.Abs(float64(to.X-from.X))))
+	if from.X == to.X {
+		horizontalDirection = (to.Y - from.Y) / length
 	} else if from.Y == to.Y {
-		for y := from.Y; y <= to.Y; y++ {
-			if b[to.X][y].Piece != nil {
-				return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
-			}
+		verticalDirection = (to.X - from.X) / length
+	} else if (from.X-to.X == from.Y-to.Y) || (from.X-to.X == to.Y-from.Y) {
+		verticalDirection = (to.X - from.X) / length
+		horizontalDirection = (to.Y - from.Y) / length
+	}
+
+	for offset := 1; offset <= length; offset++ {
+		if b[from.X+offset*verticalDirection][from.Y+offset*horizontalDirection].Piece != nil {
+			return fmt.Errorf("path from pos(%+v) to pos(%+v) is occupied by other piece(s)", from, to)
 		}
-	} else if from.X-to.X == from.Y-to.Y {
-		if from.X < to.X {
-			for offset := 1; offset <= to.X-from.X; offset++ {
-				if b[from.X+offset][from.Y+offset].Piece != nil {
-					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
-				}
-			}
-		} else {
-			for offset := 1; offset <= from.X-to.X; offset++ {
-				if b[from.X-offset][from.Y-offset].Piece != nil {
-					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
-				}
-			}
-		}
-	} else if from.X-to.X == to.Y-from.Y {
-		if from.X < to.X {
-			for offset := 1; offset <= to.X-from.X; offset++ {
-				if b[from.X+offset][from.Y-offset].Piece != nil {
-					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
-				}
-			}
-		} else {
-			for offset := 1; offset <= from.X-to.X; offset++ {
-				if b[from.X-offset][from.Y+offset].Piece != nil {
-					return nonPieceColor, errors.New("A piece occupied in position(%d, %d)")
-				}
-			}
-		}
-	} else {
-		return nonPieceColor, errors.New("piece can only move sideways, vertically, and obliquely; and cannnot move backward")
+	}
+
+	return nil
+}
+
+func (b *board) movePiece(playerColor, gameColor int, from, to Coord) (int, error) {
+	if err := b.checkMoveValid(playerColor, gameColor, from, to); err != nil {
+		return nonPieceColor, err
 	}
 
 	// move the piece
